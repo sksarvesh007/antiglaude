@@ -12,6 +12,9 @@
 
 A high-performance local protocol gateway and inference server. Antiglaude translates Anthropic Messages and OpenAI Chat Completions requests into Google Cloud Code and Gemini execution formats, enabling Claude Code CLI and standard AI toolchains to operate against upstream models including `claude-sonnet-4-6`, `claude-opus-4-6-thinking`, `gemini-3-flash`, and `gemini-2.5-pro`.
 
+> [!WARNING]
+> **Use at your own risk**: Google has been actively detecting, suspending, and banning accounts using automated gateways and unofficial protocol proxies. Do not connect your primary personal or workplace Google account. Always use a dedicated burner account. You assume full responsibility for any account actions, quota limits, or service terminations.
+
 ---
 
 ## Contents
