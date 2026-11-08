@@ -13,13 +13,23 @@ import os
 import select
 import subprocess
 import sys
-import termios
 import time
-import tty
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    import termios
+    import tty
+except ImportError:
+    termios = None
+    tty = None
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 from rich.align import Align
 from rich.box import ROUNDED, SIMPLE
@@ -59,7 +69,7 @@ class RawTerminal:
         self.old_settings = None
 
     def __enter__(self):
-        if self.fd is not None:
+        if self.fd is not None and termios is not None and sys.platform != "win32":
             try:
                 self.old_settings = termios.tcgetattr(self.fd)
                 tty.setcbreak(self.fd)
@@ -68,10 +78,11 @@ class RawTerminal:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.restore()
+        if self.fd is not None and termios is not None and sys.platform != "win32":
+            self.restore()
 
     def restore(self):
-        if self.fd is not None and self.old_settings is not None:
+        if self.fd is not None and self.old_settings is not None and termios is not None and sys.platform != "win32":
             try:
                 termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
             except Exception:
@@ -80,6 +91,25 @@ class RawTerminal:
 
     def read_key(self, timeout: float = 0.4) -> Optional[str]:
         """Read a single keypress or escape sequence non-blockingly."""
+        if self.fd is None or msvcrt is None:
+            time.sleep(timeout)
+            return None
+
+        # Windows console input via msvcrt
+        if sys.platform == "win32":
+            start = time.monotonic()
+            while True:
+                if msvcrt.kbhit():
+                    ch = msvcrt.getwch()
+                    if ch in ("\x00", "\xe0"):
+                        # Function/arrows prefix; consume the second byte and poll again
+                        _ = msvcrt.getwch()
+                        continue
+                    return ch
+                if time.monotonic() - start >= timeout:
+                    return None
+            return None
+
         if self.fd is None:
             time.sleep(timeout)
             return None

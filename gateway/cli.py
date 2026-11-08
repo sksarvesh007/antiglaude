@@ -9,6 +9,13 @@ import sys
 import urllib.request
 from pathlib import Path
 
+try:
+    from importlib.metadata import version as _pkg_version
+
+    _VERSION = _pkg_version("antiglaude")
+except Exception:
+    _VERSION = "1.0.1"
+
 from gateway.auth.project_resolver import project_resolver
 from gateway.auth.token_manager import token_manager
 from gateway.config import DEFAULT_CONFIG
@@ -21,6 +28,18 @@ def cmd_status(args):
     print(f"Found {len(db_paths)} local Antigravity state database(s):")
     for p in db_paths:
         print(f"  - {p}")
+
+    # Windows Credential Manager (agy / Antigravity IDE) fallback
+    try:
+        r_token, email, access_token, expiry = (
+            token_manager.extract_refresh_token_from_windows_credential_manager()
+        )
+        if r_token or access_token:
+            print("Found Google OAuth credentials in Windows Credential Manager (gemini:antigravity).")
+            if email:
+                print(f"  - Account: {email}")
+    except Exception:
+        pass
 
     async def _check():
         try:
@@ -162,6 +181,7 @@ def cmd_daemon(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Antiglaude Bridge CLI")
+    parser.add_argument("--version", action="version", version=f"antiglaude {_VERSION}")
     subparsers = parser.add_subparsers(dest="command", help="Subcommand to run")
 
     # status
