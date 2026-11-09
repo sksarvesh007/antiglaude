@@ -56,11 +56,17 @@ class ObserverDatabase:
             );
             """)
 
-            cur.execute("""
-            CREATE INDEX IF NOT EXISTS idx_requests_conv ON observed_requests(conversation_id);
-            CREATE INDEX IF NOT EXISTS idx_requests_resp ON observed_requests(response_id);
-            CREATE INDEX IF NOT EXISTS idx_requests_time ON observed_requests(timestamp);
-            """)
+            # sqlite3's execute() accepts a single statement only, so each index
+            # must be created with its own call.
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_requests_conv ON observed_requests(conversation_id);"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_requests_resp ON observed_requests(response_id);"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_requests_time ON observed_requests(timestamp);"
+            )
 
             cur.execute("""
             CREATE TABLE IF NOT EXISTS quota_snapshots (
